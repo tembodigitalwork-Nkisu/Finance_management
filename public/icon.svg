@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <g fill="none" stroke="#0f172a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <!-- coin -->
+    <circle cx="40" cy="16" r="11"/>
+    <path d="M40 9.5v13M43.5 12.2c-.6-1.3-2-2-3.5-2-1.9 0-3.4 1.2-3.4 2.8 0 3.6 7 1.8 7 5.5 0 1.6-1.5 2.8-3.6 2.8-1.6 0-3-.8-3.6-2.1"/>
+    <!-- open palm holding the coin -->
+    <path d="M3 44l9-4 13 1c2 .1 3.9.9 5.4 2.2l4.2 3.6h7.5c2 0 3.6 1.6 3.6 3.6s-1.6 3.6-3.6 3.6H28c-2.6 0-5.1-.8-7.2-2.4L13 49"/>
+    <!-- cuff -->
+    <path d="M3 41l0 9 6 2 0-12z"/>
+  </g>
+</svg>
