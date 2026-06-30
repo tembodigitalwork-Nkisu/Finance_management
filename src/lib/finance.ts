@@ -75,21 +75,20 @@ export function goalStatus(
 
 // The live balance of an account: its opening balance adjusted by every
 // transaction logged against it.
-//   - Asset accounts (bank, mobile money, cash): money in (income) raises it;
-//     money out (expenses and cash-out transfers, including fees) lowers it.
+//   - Asset accounts (bank, mobile money, cash): money in (income) raises it,
+//     money out (expenses) lowers it.
 //   - Credit cards: the "balance" is what you owe, so charges (expenses) raise
 //     it and payments (income) lower it.
 export function accountBalance(txns: Transaction[], account: Account): number {
   const forAcc = txns.filter((t) => t.account_id === account.id);
   const income = sum(forAcc.filter((t) => t.direction === "income"));
   const expense = sum(forAcc.filter((t) => t.direction === "expense"));
-  const transfer = sum(forAcc.filter((t) => t.direction === "transfer"));
   const opening = Number(account.opening_balance) || 0;
 
   if (account.type === "credit_card") {
     return opening + expense - income;
   }
-  return opening + income - expense - transfer;
+  return opening + income - expense;
 }
 
 function sum(txns: Transaction[]): number {

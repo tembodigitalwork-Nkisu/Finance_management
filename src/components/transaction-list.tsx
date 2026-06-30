@@ -3,19 +3,16 @@
 import { useState } from "react";
 import { deleteTransaction } from "@/app/(app)/transactions/actions";
 import { money } from "@/lib/format";
-import { MOMO_OP_LABELS, PROVIDER_LABELS, type MomoOp, type Provider } from "@/lib/momo-fees";
 import type { Account, Transaction } from "@/lib/types";
 
 // A collapsible list: each transaction shows a one-line summary and expands to
-// reveal account, note, any mobile-money fee, and delete. This replaces the wide
-// table, which did not fit narrow screens.
+// reveal account, note and delete. Replaces the wide table that did not fit
+// narrow screens.
 export function TransactionList({
   items,
-  fees,
   accounts,
 }: {
   items: Transaction[];
-  fees: Record<string, Transaction>;
   accounts: Account[];
 }) {
   const [open, setOpen] = useState<Record<string, boolean>>({});
@@ -35,19 +32,9 @@ export function TransactionList({
     <ul className="divide-y divide-slate-100">
       {items.map((t) => {
         const isOpen = !!open[t.id];
-        const fee = fees[t.id];
-        const isMomo = !!t.op && t.op !== "fee" && !!t.provider;
-        const title = isMomo
-          ? `${PROVIDER_LABELS[t.provider as Provider]} · ${MOMO_OP_LABELS[t.op as MomoOp]}`
-          : t.category;
-
-        const sign = t.direction === "income" ? "+" : t.direction === "expense" ? "-" : "";
+        const sign = t.direction === "income" ? "+" : "-";
         const amountColor =
-          t.direction === "income"
-            ? "text-teal-700"
-            : t.direction === "expense"
-              ? "text-red-600"
-              : "text-slate-500";
+          t.direction === "income" ? "text-teal-700" : "text-red-600";
 
         return (
           <li key={t.id}>
@@ -60,11 +47,8 @@ export function TransactionList({
               <span className="flex min-w-0 items-center gap-2">
                 <Chevron open={isOpen} />
                 <span className="min-w-0">
-                  <span className="block truncate font-medium">{title}</span>
-                  <span className="block text-xs text-slate-500">
-                    {t.occurred_on}
-                    {t.direction === "transfer" ? " · transfer" : ""}
-                  </span>
+                  <span className="block truncate font-medium">{t.category}</span>
+                  <span className="block text-xs text-slate-500">{t.occurred_on}</span>
                 </span>
               </span>
               <span className={"shrink-0 text-sm font-medium " + amountColor}>
@@ -77,12 +61,6 @@ export function TransactionList({
               <div className="space-y-1.5 px-4 pb-4 pl-10 text-sm">
                 <Detail label="Account" value={accountName(t.account_id)} />
                 {t.note && <Detail label="Note" value={t.note} />}
-                {fee && (
-                  <Detail
-                    label="Fee charged"
-                    value={`${money(Number(fee.amount))}${fee.note ? ` — ${fee.note}` : ""}`}
-                  />
-                )}
                 <div className="pt-1.5">
                   <form action={deleteTransaction}>
                     <input type="hidden" name="id" value={t.id} />
