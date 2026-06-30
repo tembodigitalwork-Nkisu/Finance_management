@@ -50,18 +50,27 @@ export default async function DashboardPage() {
 
       {/* Top line numbers */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="Income this month" value={money(m.income)} tone="good" />
-        <Stat label="Spent this month" value={money(m.expense)} tone="bad" />
+        <Stat label="Income this month" value={money(m.income)} accent="teal" />
+        <Stat label="Spent this month" value={money(m.expense)} accent="rose" />
         <Stat
           label="Net saved so far"
           value={money(m.net)}
-          tone={m.net >= 0 ? "good" : "bad"}
+          accent={m.net >= 0 ? "teal" : "rose"}
         />
-        <Stat label="Forecast month-end spend" value={money(m.projectedExpense)} />
+        <Stat label="Forecast month-end spend" value={money(m.projectedExpense)} accent="amber" />
       </div>
 
-      {/* Spending guidance */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-5">
+      {/* Spending guidance — tinted by whether you are on course or over budget */}
+      <section
+        className={
+          "rounded-2xl border p-5 " +
+          (settings.monthly_income_target > 0
+            ? overspending
+              ? "border-rose-100 bg-rose-50"
+              : "border-teal-100 bg-teal-50"
+            : "border-slate-200 bg-white")
+        }
+      >
         <h2 className="mb-2 font-semibold">Spending pace</h2>
         {settings.monthly_income_target > 0 ? (
           <p className="text-sm text-slate-600">
@@ -142,7 +151,7 @@ export default async function DashboardPage() {
 
                   <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
                     <div
-                      className="h-full rounded-full bg-teal-600"
+                      className="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-400"
                       style={{ width: `${s.percent}%` }}
                     />
                   </div>
@@ -168,25 +177,35 @@ export default async function DashboardPage() {
   );
 }
 
+type Accent = "teal" | "rose" | "amber" | "slate";
+
+const STAT_CARD: Record<Accent, string> = {
+  teal: "border-teal-100 bg-teal-50",
+  rose: "border-rose-100 bg-rose-50",
+  amber: "border-amber-100 bg-amber-50",
+  slate: "border-slate-200 bg-white",
+};
+
+const STAT_VALUE: Record<Accent, string> = {
+  teal: "text-teal-700",
+  rose: "text-rose-600",
+  amber: "text-amber-700",
+  slate: "text-slate-900",
+};
+
 function Stat({
   label,
   value,
-  tone,
+  accent = "slate",
 }: {
   label: string;
   value: string;
-  tone?: "good" | "bad";
+  accent?: Accent;
 }) {
-  const color =
-    tone === "good"
-      ? "text-teal-700"
-      : tone === "bad"
-        ? "text-red-600"
-        : "text-slate-900";
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+    <div className={"rounded-2xl border p-4 " + STAT_CARD[accent]}>
       <p className="text-xs text-slate-500">{label}</p>
-      <p className={"mt-1 text-lg font-semibold " + color}>{value}</p>
+      <p className={"mt-1 text-lg font-semibold " + STAT_VALUE[accent]}>{value}</p>
     </div>
   );
 }

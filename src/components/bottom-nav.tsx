@@ -39,7 +39,14 @@ export function BottomNav() {
                   (active ? "text-teal-700" : "text-slate-500")
                 }
               >
-                <Icon className="h-6 w-6" aria-hidden="true" />
+                <span
+                  className={
+                    "flex h-7 w-12 items-center justify-center rounded-full transition " +
+                    (active ? "bg-teal-50" : "")
+                  }
+                >
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                </span>
                 {label}
               </Link>
             </li>

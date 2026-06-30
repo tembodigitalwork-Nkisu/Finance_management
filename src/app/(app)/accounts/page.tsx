@@ -18,6 +18,14 @@ const ZAMBIAN_HINTS: Record<AccountType, string> = {
   cash: "e.g. Wallet",
 };
 
+// A small colour cue per account type, so the list is scannable at a glance.
+const TYPE_DOT: Record<AccountType, string> = {
+  bank: "bg-sky-500",
+  credit_card: "bg-violet-500",
+  mobile_money: "bg-amber-500",
+  cash: "bg-emerald-500",
+};
+
 export default async function AccountsPage() {
   const supabase = await createClient();
 
@@ -91,7 +99,8 @@ export default async function AccountsPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <h3 className="font-medium">{a.name}</h3>
-                    <p className="text-xs text-slate-500">
+                    <p className="flex items-center gap-1.5 text-xs text-slate-500">
+                      <span className={"h-2 w-2 shrink-0 rounded-full " + TYPE_DOT[a.type]} />
                       {ACCOUNT_TYPE_LABELS[a.type]}
                       {a.institution ? ` · ${a.institution}` : ""}
                     </p>

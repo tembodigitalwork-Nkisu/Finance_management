@@ -92,7 +92,10 @@ export default async function GoalsPage() {
                 </div>
 
                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
-                  <div className="h-full rounded-full bg-teal-600" style={{ width: `${s.percent}%` }} />
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-400"
+                    style={{ width: `${s.percent}%` }}
+                  />
                 </div>
                 <p className="mt-1 text-xs text-slate-500">
                   {money(goal.saved_amount)} saved · {money(s.remaining)} to go ·{" "}
