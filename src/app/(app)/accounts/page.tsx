@@ -16,6 +16,7 @@ const ZAMBIAN_HINTS: Record<AccountType, string> = {
   credit_card: "e.g. Stanbic Visa, FNB Credit",
   mobile_money: "e.g. Airtel Money, MTN MoMo, Zamtel Kwacha",
   cash: "e.g. Wallet",
+  savings: "Your premade savings pot",
 };
 
 // A small colour cue per account type, so the list is scannable at a glance.
