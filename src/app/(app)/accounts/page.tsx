@@ -24,6 +24,7 @@ const TYPE_DOT: Record<AccountType, string> = {
   credit_card: "bg-violet-500",
   mobile_money: "bg-amber-500",
   cash: "bg-emerald-500",
+  savings: "bg-teal-500",
 };
 
 export default async function AccountsPage() {
@@ -52,11 +53,15 @@ export default async function AccountsPage() {
         <label className="block text-xs font-medium text-slate-600 sm:col-span-1">
           Type
           <select name="type" className={inputClass} defaultValue="bank">
-            {(Object.keys(ACCOUNT_TYPE_LABELS) as AccountType[]).map((t) => (
-              <option key={t} value={t}>
-                {ACCOUNT_TYPE_LABELS[t]}
-              </option>
-            ))}
+            {(Object.keys(ACCOUNT_TYPE_LABELS) as AccountType[])
+              // Savings is premade and managed via "Add to savings", so it is
+              // not something you create here.
+              .filter((t) => t !== "savings")
+              .map((t) => (
+                <option key={t} value={t}>
+                  {ACCOUNT_TYPE_LABELS[t]}
+                </option>
+              ))}
           </select>
         </label>
         <label className="block text-xs font-medium text-slate-600">

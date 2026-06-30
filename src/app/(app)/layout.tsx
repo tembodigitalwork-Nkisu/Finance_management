@@ -1,6 +1,7 @@
 import { Nav } from "@/components/nav";
 import { BottomNav } from "@/components/bottom-nav";
 import { createClient } from "@/lib/supabase/server";
+import { ensureSavingsAccount } from "@/lib/savings";
 
 export default async function AppLayout({
   children,
@@ -11,6 +12,9 @@ export default async function AppLayout({
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Make sure the premade Savings account exists for this user.
+  if (user) await ensureSavingsAccount(user.id);
 
   return (
     <div className="min-h-screen">

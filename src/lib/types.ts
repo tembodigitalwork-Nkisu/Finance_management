@@ -1,4 +1,9 @@
-export type AccountType = "bank" | "credit_card" | "mobile_money" | "cash";
+export type AccountType =
+  | "bank"
+  | "credit_card"
+  | "mobile_money"
+  | "cash"
+  | "savings";
 export type Direction = "expense" | "income";
 
 export interface Account {
@@ -22,6 +27,11 @@ export interface Transaction {
   category: string;
   note: string | null;
   occurred_on: string; // YYYY-MM-DD
+  // A move between your own accounts (e.g. into Savings); excluded from the
+  // month's income/spending totals. The "deduct from" leg links to its receiving
+  // leg via transfer_parent_id.
+  is_transfer: boolean;
+  transfer_parent_id: string | null;
   created_at: string;
 }
 
@@ -38,7 +48,9 @@ export interface Goal {
 export interface Settings {
   user_id: string;
   monthly_income_target: number;
-  monthly_savings_target: number;
+  savings_target_amount: number;
+  savings_target_count: number;
+  savings_target_unit: string; // 'years' | 'months' | 'weeks' | 'days'
   updated_at: string;
 }
 
@@ -47,6 +59,7 @@ export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
   credit_card: "Credit card",
   mobile_money: "Mobile money",
   cash: "Cash",
+  savings: "Savings",
 };
 
 export const CATEGORIES = [

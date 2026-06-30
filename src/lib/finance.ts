@@ -19,6 +19,7 @@ export function summarizeMonth(
   const y = ref.getFullYear();
   const m = ref.getMonth();
   const inMonth = txns.filter((t) => {
+    if (t.is_transfer) return false; // moves between your own accounts don't count
     const d = new Date(t.occurred_on + "T00:00:00");
     return d.getFullYear() === y && d.getMonth() === m;
   });
@@ -89,6 +90,59 @@ export function accountBalance(txns: Transaction[], account: Account): number {
     return opening + expense - income;
   }
   return opening + income - expense;
+}
+
+export interface SavingsTarget {
+  amount: number;
+  count: number;
+  unit: string; // 'years' | 'months' | 'weeks' | 'days'
+}
+
+export interface SavingsTargetStatus {
+  hasTarget: boolean;
+  amount: number;
+  saved: number;
+  remaining: number;
+  percent: number;
+  targetDate: string; // YYYY-MM-DD
+  monthsLeft: number;
+  requiredPerMonth: number;
+}
+
+// Progress toward a savings target (an amount within a custom timeframe),
+// given how much is currently in the Savings account.
+export function savingsTargetStatus(
+  target: SavingsTarget,
+  saved: number,
+  ref = new Date(),
+): SavingsTargetStatus {
+  const hasTarget = target.amount > 0 && target.count > 0;
+  const remaining = Math.max(0, target.amount - saved);
+  const percent =
+    target.amount > 0 ? clamp((saved / target.amount) * 100, 0, 100) : 0;
+  const date = addDuration(ref, target.count, target.unit);
+  const monthsLeft = wholeMonthsBetween(ref, date);
+  const requiredPerMonth = monthsLeft > 0 ? remaining / monthsLeft : remaining;
+
+  return {
+    hasTarget,
+    amount: target.amount,
+    saved,
+    remaining,
+    percent,
+    targetDate: date.toISOString().slice(0, 10),
+    monthsLeft,
+    requiredPerMonth,
+  };
+}
+
+function addDuration(date: Date, count: number, unit: string): Date {
+  const d = new Date(date);
+  if (unit === "years") d.setFullYear(d.getFullYear() + count);
+  else if (unit === "weeks") d.setDate(d.getDate() + count * 7);
+  else if (unit === "days") d.setDate(d.getDate() + count);
+  else d.setMonth(d.getMonth() + count); // months (default)
+  return d;
 }
 
 function sum(txns: Transaction[]): number {

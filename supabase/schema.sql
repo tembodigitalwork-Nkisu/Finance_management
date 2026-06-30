@@ -9,7 +9,7 @@ create table if not exists public.accounts (
   id              uuid primary key default gen_random_uuid(),
   user_id         uuid not null references auth.users (id) on delete cascade,
   name            text not null,
-  type            text not null check (type in ('bank', 'credit_card', 'mobile_money', 'cash')),
+  type            text not null check (type in ('bank', 'credit_card', 'mobile_money', 'cash', 'savings')),
   institution     text,                       -- e.g. Zanaco, Airtel Money, MTN MoMo
   currency        text not null default 'ZMW',
   credit_limit    numeric(14,2),              -- only meaningful for credit cards
@@ -23,24 +23,39 @@ create table if not exists public.accounts (
 -- Upgrade existing installs (safe to run repeatedly).
 alter table public.accounts add column if not exists opening_balance
   numeric(14,2) not null default 0;
+alter table public.accounts drop constraint if exists accounts_type_check;
+alter table public.accounts add constraint accounts_type_check
+  check (type in ('bank', 'credit_card', 'mobile_money', 'cash', 'savings'));
 
 -- ----------------------------------------------------------------------------
 -- TRANSACTIONS  (every expense and every bit of income)
 -- ----------------------------------------------------------------------------
 create table if not exists public.transactions (
-  id           uuid primary key default gen_random_uuid(),
-  user_id      uuid not null references auth.users (id) on delete cascade,
-  account_id   uuid references public.accounts (id) on delete set null,
-  direction    text not null check (direction in ('expense', 'income')),
-  amount       numeric(14,2) not null check (amount > 0),
-  category     text not null default 'Other',
-  note         text,
-  occurred_on  date not null default current_date,
-  created_at   timestamptz not null default now()
+  id                  uuid primary key default gen_random_uuid(),
+  user_id             uuid not null references auth.users (id) on delete cascade,
+  account_id          uuid references public.accounts (id) on delete set null,
+  direction           text not null check (direction in ('expense', 'income')),
+  amount              numeric(14,2) not null check (amount > 0),
+  category            text not null default 'Other',
+  note                text,
+  occurred_on         date not null default current_date,
+  -- A move between your own accounts (e.g. into Savings). It changes account
+  -- balances but is left out of the month's income/spending totals.
+  is_transfer         boolean not null default false,
+  -- The "deduct from" leg of a transfer points at the receiving leg, so deleting
+  -- one removes the other.
+  transfer_parent_id  uuid references public.transactions (id) on delete cascade,
+  created_at          timestamptz not null default now()
 );
 
 create index if not exists transactions_user_date_idx
   on public.transactions (user_id, occurred_on desc);
+
+-- Upgrade existing installs (safe to run repeatedly).
+alter table public.transactions add column if not exists is_transfer
+  boolean not null default false;
+alter table public.transactions add column if not exists transfer_parent_id
+  uuid references public.transactions (id) on delete cascade;
 
 -- ----------------------------------------------------------------------------
 -- GOALS  (what you are saving toward, and by when)
@@ -61,9 +76,21 @@ create table if not exists public.goals (
 create table if not exists public.settings (
   user_id                uuid primary key references auth.users (id) on delete cascade,
   monthly_income_target  numeric(14,2) not null default 0,
-  monthly_savings_target numeric(14,2) not null default 0,
+  -- Savings target = an amount within a custom timeframe (count + unit:
+  -- 'years' | 'months' | 'weeks' | 'days').
+  savings_target_amount  numeric(14,2) not null default 0,
+  savings_target_count   integer not null default 0,
+  savings_target_unit    text not null default 'months',
   updated_at             timestamptz not null default now()
 );
+
+-- Upgrade existing installs (safe to run repeatedly).
+alter table public.settings add column if not exists savings_target_amount
+  numeric(14,2) not null default 0;
+alter table public.settings add column if not exists savings_target_count
+  integer not null default 0;
+alter table public.settings add column if not exists savings_target_unit
+  text not null default 'months';
 
 -- ----------------------------------------------------------------------------
 -- ROW LEVEL SECURITY: you can only ever touch your own rows

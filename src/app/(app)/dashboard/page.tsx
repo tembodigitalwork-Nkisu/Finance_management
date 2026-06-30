@@ -1,7 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
-import { summarizeMonth, goalStatus } from "@/lib/finance";
+import {
+  summarizeMonth,
+  goalStatus,
+  savingsTargetStatus,
+  accountBalance,
+} from "@/lib/finance";
 import { money, monthLabel } from "@/lib/format";
-import type { Transaction, Goal, Settings } from "@/lib/types";
+import type { Account, Transaction, Goal, Settings } from "@/lib/types";
+import { saveSavingsTarget, saveMonthlyIncome } from "./actions";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -9,24 +15,39 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   const supabase = await createClient();
 
-  const [{ data: txns }, { data: goals }, { data: settingsRow }] =
+  const [{ data: txns }, { data: goals }, { data: accounts }, { data: settingsRow }] =
     await Promise.all([
       supabase.from("transactions").select("*").order("occurred_on", { ascending: false }),
       supabase.from("goals").select("*").order("target_date", { ascending: true }),
+      supabase.from("accounts").select("*"),
       supabase.from("settings").select("*").maybeSingle(),
     ]);
 
   const transactions = (txns ?? []) as Transaction[];
+  const accountList = (accounts ?? []) as Account[];
   const settings = (settingsRow ?? {
     monthly_income_target: 0,
-    monthly_savings_target: 0,
+    savings_target_amount: 0,
+    savings_target_count: 0,
+    savings_target_unit: "months",
   }) as Settings;
 
   const m = summarizeMonth(transactions, settings.monthly_income_target);
 
-  // Your real saving capacity: the bigger of your stated target and the
-  // pace you are actually on track for this month.
-  const capacity = Math.max(settings.monthly_savings_target, m.projectedNet);
+  // Money saved = the balance of the premade Savings account.
+  const savingsAccount = accountList.find((a) => a.type === "savings");
+  const saved = savingsAccount ? accountBalance(transactions, savingsAccount) : 0;
+  const target = savingsTargetStatus(
+    {
+      amount: settings.savings_target_amount,
+      count: settings.savings_target_count,
+      unit: settings.savings_target_unit,
+    },
+    saved,
+  );
+
+  // Your real saving capacity: the pace you are actually on track for.
+  const capacity = Math.max(0, m.projectedNet);
 
   const overspending = m.projectedExpense > settings.monthly_income_target &&
     settings.monthly_income_target > 0;
@@ -59,6 +80,113 @@ export default async function DashboardPage() {
         />
         <Stat label="Forecast month-end spend" value={money(m.projectedExpense)} accent="amber" />
       </div>
+
+      {/* Savings target + progress */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-5">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold">Savings target</h2>
+          {target.hasTarget && (
+            <span className="text-sm font-medium text-teal-700">
+              {target.percent.toFixed(0)}%
+            </span>
+          )}
+        </div>
+
+        {target.hasTarget ? (
+          <>
+            <p className="mt-1 text-sm text-slate-600">
+              <strong className="text-slate-900">{money(target.saved)}</strong> saved
+              of {money(target.amount)} · {money(target.remaining)} to go
+            </p>
+            <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-100">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-400"
+                style={{ width: `${target.percent}%` }}
+              />
+            </div>
+            <p className="mt-2 text-sm text-slate-600">
+              Target by <strong>{target.targetDate}</strong>. Save about{" "}
+              <strong>{money(target.requiredPerMonth)}</strong>/month to get there.
+            </p>
+          </>
+        ) : (
+          <p className="mt-1 text-sm text-slate-500">
+            Set an amount and a timeframe to track your savings progress. Add money
+            with the <strong>Add to savings</strong> type on the Transactions page.
+          </p>
+        )}
+
+        <form action={saveSavingsTarget} className="mt-4 flex flex-wrap items-end gap-3">
+          <label className="block text-xs font-medium text-slate-600">
+            Target amount (K)
+            <input
+              name="savings_target_amount"
+              type="number"
+              step="0.01"
+              min="0"
+              defaultValue={settings.savings_target_amount || ""}
+              placeholder="0"
+              className={inputClass}
+            />
+          </label>
+          <label className="block text-xs font-medium text-slate-600">
+            Within
+            <div className="mt-1 flex overflow-hidden rounded-lg border border-slate-300 focus-within:border-teal-600">
+              <input
+                name="savings_target_count"
+                type="number"
+                min="1"
+                defaultValue={settings.savings_target_count || ""}
+                placeholder="0"
+                className="w-20 px-2 py-1.5 text-sm outline-none"
+              />
+              <select
+                name="savings_target_unit"
+                defaultValue={settings.savings_target_unit || "months"}
+                className="border-l border-slate-300 bg-slate-50 px-2 text-sm outline-none"
+              >
+                <option value="years">years</option>
+                <option value="months">months</option>
+                <option value="weeks">weeks</option>
+                <option value="days">days</option>
+              </select>
+            </div>
+          </label>
+          <button className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800">
+            Save target
+          </button>
+        </form>
+      </section>
+
+      {/* Expected monthly income — temporary home, pending where you want it */}
+      <section className="rounded-2xl border border-dashed border-amber-300 bg-amber-50/60 p-5">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-semibold">Expected monthly income</h2>
+          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+            temporary spot
+          </span>
+        </div>
+        <p className="mt-1 text-xs text-slate-500">
+          Parked here for now. Tell me where you want this to live.
+        </p>
+        <form action={saveMonthlyIncome} className="mt-3 flex flex-wrap items-end gap-3">
+          <label className="block text-xs font-medium text-slate-600">
+            Amount (K)
+            <input
+              name="monthly_income_target"
+              type="number"
+              step="0.01"
+              min="0"
+              defaultValue={settings.monthly_income_target || ""}
+              placeholder="0"
+              className={inputClass}
+            />
+          </label>
+          <button className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800">
+            Save
+          </button>
+        </form>
+      </section>
 
       {/* Spending guidance — tinted by whether you are on course or over budget */}
       <section
@@ -94,11 +222,7 @@ export default async function DashboardPage() {
           </p>
         ) : (
           <p className="text-sm text-slate-500">
-            Set a monthly income target in{" "}
-            <Link href="/settings" className="text-teal-700 underline">
-              Settings
-            </Link>{" "}
-            to unlock budget guidance.
+            Set your expected monthly income above to unlock budget guidance.
           </p>
         )}
       </section>
@@ -176,6 +300,9 @@ export default async function DashboardPage() {
     </div>
   );
 }
+
+const inputClass =
+  "mt-1 w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-teal-600";
 
 type Accent = "teal" | "rose" | "amber" | "slate";
 

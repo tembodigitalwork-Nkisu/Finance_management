@@ -8,7 +8,6 @@ const LINKS = [
   { href: "/transactions", label: "Transactions" },
   { href: "/accounts", label: "Accounts" },
   { href: "/goals", label: "Goals" },
-  { href: "/settings", label: "Settings" },
 ];
 
 export function Nav() {

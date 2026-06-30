@@ -19,12 +19,11 @@ export default async function GoalsPage() {
   const goalList = (goals ?? []) as Goal[];
   const settings = (settingsRow ?? {
     monthly_income_target: 0,
-    monthly_savings_target: 0,
   }) as Settings;
   const transactions = (txns ?? []) as Transaction[];
 
   const m = summarizeMonth(transactions, settings.monthly_income_target);
-  const capacity = Math.max(settings.monthly_savings_target, m.projectedNet);
+  const capacity = Math.max(0, m.projectedNet);
 
   const today = new Date().toISOString().slice(0, 10);
 

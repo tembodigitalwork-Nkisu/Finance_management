@@ -18,7 +18,6 @@ const TABS: Tab[] = [
   { href: "/transactions", label: "Activity", Icon: ActivityIcon },
   { href: "/accounts", label: "Accounts", Icon: WalletIcon },
   { href: "/goals", label: "Goals", Icon: TargetIcon },
-  { href: "/settings", label: "Settings", Icon: SlidersIcon },
 ];
 
 export function BottomNav() {
@@ -105,19 +104,6 @@ function TargetIcon(props: SVGProps<SVGSVGElement>) {
       <circle cx="12" cy="12" r="8" />
       <circle cx="12" cy="12" r="4" />
       <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
-function SlidersIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg {...base} {...props}>
-      <path d="M5 5v6M5 15v4" />
-      <circle cx="5" cy="13" r="2" />
-      <path d="M12 5v2M12 11v8" />
-      <circle cx="12" cy="9" r="2" />
-      <path d="M19 4v11" />
-      <circle cx="19" cy="17" r="2" />
     </svg>
   );
 }

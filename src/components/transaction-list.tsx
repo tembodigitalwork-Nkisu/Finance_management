@@ -11,9 +11,13 @@ import type { Account, Transaction } from "@/lib/types";
 export function TransactionList({
   items,
   accounts,
+  sources,
 }: {
   items: Transaction[];
   accounts: Account[];
+  // For a savings deposit, the name of the account it was deducted from (if any),
+  // keyed by the deposit's id.
+  sources?: Record<string, string>;
 }) {
   const [open, setOpen] = useState<Record<string, boolean>>({});
 
@@ -60,6 +64,9 @@ export function TransactionList({
             {isOpen && (
               <div className="space-y-1.5 px-4 pb-4 pl-10 text-sm">
                 <Detail label="Account" value={accountName(t.account_id)} />
+                {sources?.[t.id] && (
+                  <Detail label="Deducted from" value={sources[t.id]} />
+                )}
                 {t.note && <Detail label="Note" value={t.note} />}
                 <div className="pt-1.5">
                   <form action={deleteTransaction}>

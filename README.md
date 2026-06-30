@@ -11,16 +11,16 @@ Tailwind CSS v4.
 ## What it does
 
 - **Dashboard** — income, spending, net saved and a forecast of month-end
-  spend, plus an overspending warning against your income target.
-- **Transactions** — add and delete income/expenses, tag a category and an
-  account, set the date.
-- **Accounts** — bank accounts, credit cards and mobile-money wallets
-  (Airtel Money, MTN MoMo, Zamtel Kwacha). Credit cards show a live outstanding
-  balance and limit usage from the charges you log.
+  spend, an overspending warning, and a **savings target** (an amount within a
+  custom timeframe) with a progress bar tracking your Savings account.
+- **Transactions** — add and delete income/expenses, or **Add to savings**
+  (optionally deducting from another account). Tag a category and an account,
+  set the date.
+- **Accounts** — bank accounts, credit cards, mobile-money wallets and a
+  premade **Savings** account, each with a live balance. Credit cards also show
+  limit usage from the charges you log.
 - **Goals** — set a target and a date; see the required monthly saving and an
   on-track / behind status based on your real saving capacity.
-- **Settings** — your expected monthly income and savings target, which power
-  the predictions.
 
 ## A note on "automatic" bank data
 
@@ -90,11 +90,11 @@ src/lib/finance.ts           the prediction engine (savings + on-track logic)
 src/lib/format.ts            Kwacha currency formatting
 src/lib/supabase/            browser, server and middleware Supabase clients
 src/app/login/               sign in / sign up
-src/app/(app)/dashboard/     monthly overview + goal status
+src/app/(app)/dashboard/     monthly overview, savings target + income
 src/app/(app)/transactions/  add / list / delete transactions
-src/app/(app)/accounts/      banks, cards, mobile money + card balances
+src/app/(app)/accounts/      banks, cards, mobile money, savings + balances
 src/app/(app)/goals/         goals + contributions
-src/app/(app)/settings/      income & savings targets
+src/lib/savings.ts           premade Savings account provisioning
 ```
 
 ## Next steps you might want
