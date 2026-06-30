@@ -116,18 +116,24 @@ export function savingsTargetStatus(
   saved: number,
   ref = new Date(),
 ): SavingsTargetStatus {
-  const hasTarget = target.amount > 0 && target.count > 0;
-  const remaining = Math.max(0, target.amount - saved);
-  const percent =
-    target.amount > 0 ? clamp((saved / target.amount) * 100, 0, 100) : 0;
-  const date = addDuration(ref, target.count, target.unit);
+  // Coerce everything: stored values may be missing (e.g. before a migration),
+  // which must degrade to "no target" rather than produce an Invalid Date.
+  const amount = Number(target.amount) || 0;
+  const count = Math.max(0, Math.trunc(Number(target.count) || 0));
+  const unit = target.unit || "months";
+  const savedNum = Number(saved) || 0;
+
+  const hasTarget = amount > 0 && count > 0;
+  const remaining = Math.max(0, amount - savedNum);
+  const percent = amount > 0 ? clamp((savedNum / amount) * 100, 0, 100) : 0;
+  const date = addDuration(ref, count, unit);
   const monthsLeft = wholeMonthsBetween(ref, date);
   const requiredPerMonth = monthsLeft > 0 ? remaining / monthsLeft : remaining;
 
   return {
     hasTarget,
-    amount: target.amount,
-    saved,
+    amount,
+    saved: savedNum,
     remaining,
     percent,
     targetDate: date.toISOString().slice(0, 10),
@@ -137,11 +143,12 @@ export function savingsTargetStatus(
 }
 
 function addDuration(date: Date, count: number, unit: string): Date {
+  const n = Number(count) || 0; // never feed NaN into the Date, it goes Invalid
   const d = new Date(date);
-  if (unit === "years") d.setFullYear(d.getFullYear() + count);
-  else if (unit === "weeks") d.setDate(d.getDate() + count * 7);
-  else if (unit === "days") d.setDate(d.getDate() + count);
-  else d.setMonth(d.getMonth() + count); // months (default)
+  if (unit === "years") d.setFullYear(d.getFullYear() + n);
+  else if (unit === "weeks") d.setDate(d.getDate() + n * 7);
+  else if (unit === "days") d.setDate(d.getDate() + n);
+  else d.setMonth(d.getMonth() + n); // months (default)
   return d;
 }
 
