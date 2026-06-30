@@ -6,33 +6,60 @@
 -- ACCOUNTS  (where money lives: bank, credit card, mobile money, cash)
 -- ----------------------------------------------------------------------------
 create table if not exists public.accounts (
-  id            uuid primary key default gen_random_uuid(),
-  user_id       uuid not null references auth.users (id) on delete cascade,
-  name          text not null,
-  type          text not null check (type in ('bank', 'credit_card', 'mobile_money', 'cash')),
-  institution   text,                       -- e.g. Zanaco, Airtel Money, MTN MoMo
-  currency      text not null default 'ZMW',
-  credit_limit  numeric(14,2),              -- only meaningful for credit cards
-  created_at    timestamptz not null default now()
+  id              uuid primary key default gen_random_uuid(),
+  user_id         uuid not null references auth.users (id) on delete cascade,
+  name            text not null,
+  type            text not null check (type in ('bank', 'credit_card', 'mobile_money', 'cash')),
+  institution     text,                       -- e.g. Zanaco, Airtel Money, MTN MoMo
+  currency        text not null default 'ZMW',
+  credit_limit    numeric(14,2),              -- only meaningful for credit cards
+  -- Starting balance when the account is created. The live balance is this plus
+  -- the effect of every transaction logged against the account. For a credit
+  -- card it is the opening amount owed (usually 0).
+  opening_balance numeric(14,2) not null default 0,
+  created_at      timestamptz not null default now()
 );
+
+-- Upgrade existing installs (safe to run repeatedly).
+alter table public.accounts add column if not exists opening_balance
+  numeric(14,2) not null default 0;
 
 -- ----------------------------------------------------------------------------
 -- TRANSACTIONS  (every expense and every bit of income)
 -- ----------------------------------------------------------------------------
 create table if not exists public.transactions (
-  id           uuid primary key default gen_random_uuid(),
-  user_id      uuid not null references auth.users (id) on delete cascade,
-  account_id   uuid references public.accounts (id) on delete set null,
-  direction    text not null check (direction in ('expense', 'income')),
-  amount       numeric(14,2) not null check (amount > 0),
-  category     text not null default 'Other',
-  note         text,
-  occurred_on  date not null default current_date,
-  created_at   timestamptz not null default now()
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null references auth.users (id) on delete cascade,
+  account_id    uuid references public.accounts (id) on delete set null,
+  -- 'transfer' covers a mobile-money cash-out: it moves your own money and so
+  -- counts as neither income nor spending (only its fee does).
+  direction     text not null check (direction in ('expense', 'income', 'transfer')),
+  amount        numeric(14,2) not null check (amount > 0),
+  category      text not null default 'Other',
+  note          text,
+  occurred_on   date not null default current_date,
+  -- Mobile-money metadata: op is 'withdraw' | 'send' | 'receive' | 'fee', and
+  -- provider is 'mtn' | 'airtel' | 'zamtel'. Both null for plain entries.
+  op            text,
+  provider      text,
+  -- A fee row points at the transaction it was charged for, so deleting that
+  -- transaction removes its fee automatically.
+  fee_parent_id uuid references public.transactions (id) on delete cascade,
+  created_at    timestamptz not null default now()
 );
 
 create index if not exists transactions_user_date_idx
   on public.transactions (user_id, occurred_on desc);
+
+-- Upgrade existing installs (safe to run repeatedly): add the mobile-money
+-- columns and widen the direction check to allow transfers.
+alter table public.transactions add column if not exists op text;
+alter table public.transactions add column if not exists provider text;
+alter table public.transactions add column if not exists fee_parent_id
+  uuid references public.transactions (id) on delete cascade;
+alter table public.transactions drop constraint if exists transactions_direction_check;
+alter table public.transactions add constraint transactions_direction_check
+  check (direction in ('expense', 'income', 'transfer'));
 
 -- ----------------------------------------------------------------------------
 -- GOALS  (what you are saving toward, and by when)

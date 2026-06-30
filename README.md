@@ -22,6 +22,27 @@ Tailwind CSS v4.
 - **Settings** — your expected monthly income and savings target, which power
   the predictions.
 
+## Mobile money fees (MTN, Airtel, Zamtel)
+
+When you log a **Withdraw**, **Send money** or **Receive money** transaction and
+pick the operator, the app applies that operator's official tariff and records
+the fee as its own linked transaction (so your spending totals stay exact, and
+deleting the transfer removes its fee too). Receiving is free; sends also include
+the government person-to-person levy.
+
+The tariff tables live in one file, `src/lib/momo-fees.ts`. **Verify the numbers
+before relying on them.** Operator tariffs are banded and change over time (the
+levy doubled on 1 January 2026), and when these were researched the public
+sources disagreed on several bands and Zamtel's official tariff was unreachable.
+So Airtel withdrawal is marked verified, MTN and Zamtel are not, and the app
+shows an "unverified" warning when you pick an unconfirmed operator. To correct a
+rate, edit the number in that file; the whole app updates.
+
+> Migrating an existing install: the transactions table gained `op`, `provider`
+> and `fee_parent_id` columns and a new `transfer` direction. Re-run
+> `supabase/schema.sql` in the Supabase SQL Editor (it is safe to run again) to
+> add them.
+
 ## A note on "automatic" bank data
 
 Zambian banks and mobile-money providers do not offer open-banking APIs that let
@@ -65,6 +86,22 @@ them in your own terminal):
 ```
 
 Then open http://localhost:3000, click **Create account**, and you are in.
+
+## Install it on your phone
+
+Kwacha Tracker is a PWA (progressive web app), so it installs to your home
+screen and runs full-screen like a native app, no app store needed. It must be
+served over HTTPS first (localhost cannot be installed), so deploy it (Vercel's
+free tier works) and open that URL on your phone.
+
+- **Android (Chrome):** open the site, tap the **⋮** menu, then **Install app**
+  (or **Add to Home screen**).
+- **iPhone (Safari):** open the site, tap the **Share** button, then
+  **Add to Home Screen**.
+
+You will get the Kwacha icon on your home screen; launching it opens the app
+without browser bars. If you are offline it shows a simple "you are offline"
+screen rather than a browser error, since live balances need a connection.
 
 ## Project layout
 

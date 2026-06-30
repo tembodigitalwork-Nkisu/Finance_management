@@ -11,6 +11,7 @@ export async function addAccount(formData: FormData) {
   if (!user) return;
 
   const creditLimit = formData.get("credit_limit");
+  const opening = formData.get("opening_balance");
 
   await supabase.from("accounts").insert({
     user_id: user.id,
@@ -18,6 +19,7 @@ export async function addAccount(formData: FormData) {
     type: String(formData.get("type") ?? "bank"),
     institution: String(formData.get("institution") ?? "") || null,
     credit_limit: creditLimit ? Number(creditLimit) : null,
+    opening_balance: opening ? Number(opening) : 0,
   });
 
   revalidatePath("/accounts");

@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { money } from "@/lib/format";
-import { cardBalance } from "@/lib/finance";
+import { accountBalance } from "@/lib/finance";
 import {
   ACCOUNT_TYPE_LABELS,
   type Account,
@@ -60,11 +60,15 @@ export default async function AccountsPage() {
           <input name="institution" placeholder="Zanaco" className={inputClass} />
         </label>
         <label className="block text-xs font-medium text-slate-600">
+          Opening balance (K)
+          <input name="opening_balance" type="number" step="0.01" defaultValue="0" className={inputClass} />
+        </label>
+        <label className="block text-xs font-medium text-slate-600">
           Credit limit (cards only)
           <input name="credit_limit" type="number" step="0.01" min="0" placeholder="optional" className={inputClass} />
         </label>
         <div className="col-span-2 sm:col-span-4">
-          <button className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800">
+          <button className="w-full rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-teal-800 sm:w-auto">
             Add account
           </button>
         </div>
@@ -79,7 +83,7 @@ export default async function AccountsPage() {
         ) : (
           accountList.map((a) => {
             const isCard = a.type === "credit_card";
-            const balance = cardBalance(transactions, a.id);
+            const balance = accountBalance(transactions, a);
             const usage =
               isCard && a.credit_limit ? (balance / a.credit_limit) * 100 : null;
             return (
@@ -92,6 +96,31 @@ export default async function AccountsPage() {
                       {a.institution ? ` · ${a.institution}` : ""}
                     </p>
                   </div>
+                  <div className="text-right">
+                    {/* For a card this is debt owed; for everything else it is
+                        money available. */}
+                    <p
+                      className={
+                        "text-lg font-semibold " +
+                        (isCard
+                          ? "text-red-600"
+                          : balance < 0
+                            ? "text-red-600"
+                            : "text-slate-900")
+                      }
+                    >
+                      {money(balance)}
+                    </p>
+                    <p className="text-[11px] text-slate-400">
+                      {isCard ? "owed" : "balance"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex items-center justify-between">
+                  <span className="text-xs text-slate-400">
+                    Opened with {money(a.opening_balance)}
+                  </span>
                   <form action={deleteAccount}>
                     <input type="hidden" name="id" value={a.id} />
                     <button className="text-xs text-slate-400 hover:text-red-600">
@@ -100,24 +129,20 @@ export default async function AccountsPage() {
                   </form>
                 </div>
 
-                {isCard && (
+                {isCard && usage !== null && (
                   <div className="mt-3">
-                    <p className="text-sm text-slate-600">
-                      Outstanding charges:{" "}
-                      <strong className="text-red-600">{money(balance)}</strong>
-                      {a.credit_limit ? ` of ${money(a.credit_limit)} limit` : ""}
+                    <p className="text-xs text-slate-500">
+                      {money(balance)} of {money(a.credit_limit ?? 0)} limit used
                     </p>
-                    {usage !== null && (
-                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
-                        <div
-                          className={
-                            "h-full rounded-full " +
-                            (usage > 80 ? "bg-red-500" : "bg-amber-400")
-                          }
-                          style={{ width: `${Math.min(100, Math.max(0, usage))}%` }}
-                        />
-                      </div>
-                    )}
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className={
+                          "h-full rounded-full " +
+                          (usage > 80 ? "bg-red-500" : "bg-amber-400")
+                        }
+                        style={{ width: `${Math.min(100, Math.max(0, usage))}%` }}
+                      />
+                    </div>
                   </div>
                 )}
               </div>

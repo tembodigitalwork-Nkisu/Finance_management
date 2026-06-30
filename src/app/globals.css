@@ -11,8 +11,27 @@
   color-scheme: light;
 }
 
+html {
+  /* No grey flash when tapping links/buttons on touch devices. */
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   background-color: var(--color-paper);
   color: var(--color-ink);
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* dvh tracks the real visible height as mobile browser bars show/hide. */
+  min-height: 100dvh;
+  overscroll-behavior-y: none;
+}
+
+/* iOS Safari auto-zooms when you focus an input whose font is under 16px. Our
+   compact controls use 14px, so force 16px on small screens to stop the page
+   jumping every time a field is tapped. */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
 }

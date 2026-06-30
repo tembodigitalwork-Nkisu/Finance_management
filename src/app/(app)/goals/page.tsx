@@ -58,7 +58,7 @@ export default async function GoalsPage() {
           <input name="target_date" type="date" required min={today} className={inputClass} />
         </label>
         <div className="col-span-2 sm:col-span-4">
-          <button className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800">
+          <button className="w-full rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-teal-800 sm:w-auto">
             Add goal
           </button>
         </div>

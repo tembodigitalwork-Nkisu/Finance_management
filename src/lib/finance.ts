@@ -1,4 +1,4 @@
-import type { Transaction, Goal } from "./types";
+import type { Transaction, Goal, Account } from "./types";
 
 export interface MonthSummary {
   income: number;
@@ -73,12 +73,23 @@ export function goalStatus(
   return { remaining, percent, monthsLeft, requiredPerMonth, onTrack, shortfallPerMonth };
 }
 
-// Current outstanding balance on a credit-card account = expenses minus
-// any payments (income) logged against it.
-export function cardBalance(txns: Transaction[], accountId: string): number {
-  const forCard = txns.filter((t) => t.account_id === accountId);
-  return sum(forCard.filter((t) => t.direction === "expense")) -
-    sum(forCard.filter((t) => t.direction === "income"));
+// The live balance of an account: its opening balance adjusted by every
+// transaction logged against it.
+//   - Asset accounts (bank, mobile money, cash): money in (income) raises it;
+//     money out (expenses and cash-out transfers, including fees) lowers it.
+//   - Credit cards: the "balance" is what you owe, so charges (expenses) raise
+//     it and payments (income) lower it.
+export function accountBalance(txns: Transaction[], account: Account): number {
+  const forAcc = txns.filter((t) => t.account_id === account.id);
+  const income = sum(forAcc.filter((t) => t.direction === "income"));
+  const expense = sum(forAcc.filter((t) => t.direction === "expense"));
+  const transfer = sum(forAcc.filter((t) => t.direction === "transfer"));
+  const opening = Number(account.opening_balance) || 0;
+
+  if (account.type === "credit_card") {
+    return opening + expense - income;
+  }
+  return opening + income - expense - transfer;
 }
 
 function sum(txns: Transaction[]): number {
