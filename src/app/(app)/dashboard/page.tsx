@@ -70,12 +70,12 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      {/* All-time totals */}
+      {/* All-time balances */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <Stat label="Income (all time)" value={money(allIncome)} accent="teal" />
-        <Stat label="Spending (all time)" value={money(allExpense)} accent="rose" />
+        <Stat label="Income balance" value={money(allIncome)} accent="teal" />
+        <Stat label="Expense balance" value={money(allExpense)} accent="rose" />
         <Stat
-          label="Net (all time)"
+          label="Net balance"
           value={money(allNet)}
           accent={allNet >= 0 ? "teal" : "rose"}
         />

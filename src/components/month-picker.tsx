@@ -4,12 +4,21 @@ import { useRouter } from "next/navigation";
 
 // Picks which month the transactions page shows. Navigates to
 // /transactions?month=YYYY-MM so the (server) page can filter by it.
-export function MonthPicker({ value, max }: { value: string; max: string }) {
+export function MonthPicker({
+  value,
+  min,
+  max,
+}: {
+  value: string;
+  min: string;
+  max: string;
+}) {
   const router = useRouter();
   return (
     <input
       type="month"
       value={value}
+      min={min}
       max={max}
       onChange={(e) =>
         router.push(

@@ -28,7 +28,7 @@ export function Stat({
 }) {
   return (
     <div className={"rounded-2xl border p-4 " + CARD[accent]}>
-      <p className="text-xs text-slate-500">{label}</p>
+      <p className="text-base font-bold text-slate-800">{label}</p>
       <p className={"mt-1 text-lg font-semibold " + VALUE[accent]}>{value}</p>
     </div>
   );

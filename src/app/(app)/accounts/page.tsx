@@ -138,7 +138,7 @@ export default async function AccountsPage() {
                   </span>
                   <form action={deleteAccount}>
                     <input type="hidden" name="id" value={a.id} />
-                    <button className="text-xs text-slate-400 hover:text-red-600">
+                    <button className="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-100">
                       Delete
                     </button>
                   </form>

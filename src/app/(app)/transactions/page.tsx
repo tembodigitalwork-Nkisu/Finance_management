@@ -31,6 +31,12 @@ export default async function TransactionsPage({
   const raw = (await searchParams).month ?? "";
   const selectedMonth = /^\d{4}-\d{2}$/.test(raw) ? raw : currentMonth;
 
+  // The picker cannot go earlier than the first month you logged anything.
+  const startMonth = all.reduce(
+    (min, t) => (t.occurred_on.slice(0, 7) < min ? t.occurred_on.slice(0, 7) : min),
+    currentMonth,
+  );
+
   const inMonth = all.filter((t) => t.occurred_on.slice(0, 7) === selectedMonth);
 
   // Monthly income and spending exclude internal transfers (e.g. into Savings).
@@ -52,7 +58,7 @@ export default async function TransactionsPage({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">Transactions</h1>
-        <MonthPicker value={selectedMonth} max={currentMonth} />
+        <MonthPicker value={selectedMonth} min={startMonth} max={currentMonth} />
       </div>
 
       {/* Income and spending for the selected month */}
