@@ -5,8 +5,9 @@ import {
   savingsTargetStatus,
   accountBalance,
 } from "@/lib/finance";
-import { money, monthLabel } from "@/lib/format";
+import { money } from "@/lib/format";
 import type { Account, Transaction, Goal, Settings } from "@/lib/types";
+import { Stat } from "@/components/stat";
 import { saveSavingsTarget, saveMonthlyIncome } from "./actions";
 import Link from "next/link";
 
@@ -34,6 +35,11 @@ export default async function DashboardPage() {
 
   const m = summarizeMonth(transactions, settings.monthly_income_target);
 
+  // All-time totals (internal transfers such as savings deposits excluded).
+  const allIncome = sumWhere(transactions, "income");
+  const allExpense = sumWhere(transactions, "expense");
+  const allNet = allIncome - allExpense;
+
   // Money saved = the balance of the premade Savings account.
   const savingsAccount = accountList.find((a) => a.type === "savings");
   const saved = savingsAccount ? accountBalance(transactions, savingsAccount) : 0;
@@ -55,12 +61,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold">{monthLabel()}</h1>
-          <p className="text-sm text-slate-500">
-            Day {m.dayOfMonth} of {m.daysInMonth}
-          </p>
-        </div>
+        <h1 className="text-xl font-semibold">Overview</h1>
         <Link
           href="/transactions"
           className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-medium text-white hover:bg-teal-800"
@@ -69,16 +70,15 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      {/* Top line numbers */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="Income this month" value={money(m.income)} accent="teal" />
-        <Stat label="Spent this month" value={money(m.expense)} accent="rose" />
+      {/* All-time totals */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <Stat label="Income (all time)" value={money(allIncome)} accent="teal" />
+        <Stat label="Spending (all time)" value={money(allExpense)} accent="rose" />
         <Stat
-          label="Net saved so far"
-          value={money(m.net)}
-          accent={m.net >= 0 ? "teal" : "rose"}
+          label="Net (all time)"
+          value={money(allNet)}
+          accent={allNet >= 0 ? "teal" : "rose"}
         />
-        <Stat label="Forecast month-end spend" value={money(m.projectedExpense)} accent="amber" />
       </div>
 
       {/* Savings target + progress */}
@@ -304,35 +304,8 @@ export default async function DashboardPage() {
 const inputClass =
   "mt-1 w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-teal-600";
 
-type Accent = "teal" | "rose" | "amber" | "slate";
-
-const STAT_CARD: Record<Accent, string> = {
-  teal: "border-teal-100 bg-teal-50",
-  rose: "border-rose-100 bg-rose-50",
-  amber: "border-amber-100 bg-amber-50",
-  slate: "border-slate-200 bg-white",
-};
-
-const STAT_VALUE: Record<Accent, string> = {
-  teal: "text-teal-700",
-  rose: "text-rose-600",
-  amber: "text-amber-700",
-  slate: "text-slate-900",
-};
-
-function Stat({
-  label,
-  value,
-  accent = "slate",
-}: {
-  label: string;
-  value: string;
-  accent?: Accent;
-}) {
-  return (
-    <div className={"rounded-2xl border p-4 " + STAT_CARD[accent]}>
-      <p className="text-xs text-slate-500">{label}</p>
-      <p className={"mt-1 text-lg font-semibold " + STAT_VALUE[accent]}>{value}</p>
-    </div>
-  );
+function sumWhere(txns: Transaction[], direction: "income" | "expense"): number {
+  return txns
+    .filter((t) => t.direction === direction && !t.is_transfer)
+    .reduce((acc, t) => acc + Number(t.amount), 0);
 }
