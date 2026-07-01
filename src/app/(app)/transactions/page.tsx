@@ -15,9 +15,10 @@ export default async function TransactionsPage({
 }) {
   const supabase = await createClient();
 
-  const [{ data: txns }, { data: accounts }] = await Promise.all([
+  const [{ data: txns }, { data: accounts }, { data: userData }] = await Promise.all([
     supabase.from("transactions").select("*").order("occurred_on", { ascending: false }),
     supabase.from("accounts").select("*").order("name"),
+    supabase.auth.getUser(),
   ]);
 
   const all = (txns ?? []) as Transaction[];
@@ -31,11 +32,9 @@ export default async function TransactionsPage({
   const raw = (await searchParams).month ?? "";
   const selectedMonth = /^\d{4}-\d{2}$/.test(raw) ? raw : currentMonth;
 
-  // The picker cannot go earlier than the first month you logged anything.
-  const startMonth = all.reduce(
-    (min, t) => (t.occurred_on.slice(0, 7) < min ? t.occurred_on.slice(0, 7) : min),
-    currentMonth,
-  );
+  // The picker cannot go earlier than the month you signed up.
+  const createdAt = userData.user?.created_at;
+  const startMonth = createdAt ? createdAt.slice(0, 7) : currentMonth;
 
   const inMonth = all.filter((t) => t.occurred_on.slice(0, 7) === selectedMonth);
 
